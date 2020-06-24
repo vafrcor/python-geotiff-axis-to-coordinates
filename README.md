@@ -1,6 +1,6 @@
 # Python Geotiff Axis to Coordinates
 
-## How To Run
+## How To Run this Project
 
 ### Requirements
 - Python `>= 3.6.x`
@@ -16,8 +16,9 @@
 	- Enter new the virtual environment => `source ENV/bin/activate`
 	- Install Dependencies => `pip install -r requirements.txt`
 	- Exit => `deactivate`
+- Download files from [GDrive](https://drive.google.com/drive/folders/1TntXWGW0DW251OcGuyk_o-neTAg5v9x9?usp=sharing) into `./data/` directory
 
-### Main Commands
+### Usage
 - Go to project directory
 - Enter new the virtual environment => `source ENV/bin/activate`
 - Run interactive menu => `python index.py`
