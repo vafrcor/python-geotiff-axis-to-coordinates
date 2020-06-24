@@ -1,5 +1,28 @@
 # Python Geotiff Axis to Coordinates
 
+## How To Run
+
+### Requirements
+- Python `>= 3.6.x`
+- Python Virtualenv `>= 20.x.x`
+- GDAL `3.1.0` (Installation based on each OS support)
+
+
+### Installation
+- Clone this repo to local computer
+- Go to project directory
+- Run these commands:
+	- Create new virtual environment => `virtualenv ENV -p python`
+	- Enter new the virtual environment => `source ENV/bin/activate`
+	- Install Dependencies => `pip install -r requirements.txt`
+	- Exit => `deactivate`
+
+### Main Commands
+- Go to project directory
+- Enter new the virtual environment => `source ENV/bin/activate`
+- Run interactive menu => `python index.py`
+- Exit => `deactivate`
+
 ## Demo Screenshots
 #### Main Menu
 ![](/data/screenshots/main-menu.png?raw=true)
