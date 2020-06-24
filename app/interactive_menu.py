@@ -1,0 +1,72 @@
+import time
+from .utils import *
+from .geotiff import GeoTiffProcessor
+
+class InteractiveMenu():
+  name='Example Menu'
+  menus={}
+  image_types={
+    'small': 'data/small.tif',
+    'medium': 'data/medium.tif',
+    'large': 'data/large.tif',
+    'extra_large': 'data/extra_large.tif',
+  }
+
+  def __init__(self, name, menus={}, opt={}):
+    InteractiveMenu.name= name if not name is None else self.name
+    InteractiveMenu.menus= menus
+
+  @classmethod 
+  def show_menu(self):
+    print(self.name)
+    write_separator()
+
+    mkeys= list(self.menus.keys())
+    x=0
+    for mk,mv in self.menus.items():
+      x+=1
+      print (str(x)+' - '+mv)
+
+    imode = int(input("Please enter a mode: "))
+    imx= imode - 1
+
+    if imx < len(mkeys):
+      write_separator()
+      getattr(self, mkeys[imx])()
+    else:
+      print ("unknown mode")
+
+    time.sleep(2)
+    write_separator()
+    next_menu = str(input("Do you wanted to choose another menu? [y/n]: "))
+    if next_menu.lower() == 'y':
+      self.show_menu()
+    else:
+      print ("Thank you for tried this menu. Bye...")
+      exit()
+
+  @classmethod
+  def translate_axis_to_coordinate(self, size):
+    try:
+      x= int(input('Set X-Axis: '))
+      y= int(input('Set Y-Axis: '))
+      GeoTiffProcessor.get_axis_point_coordinate(self.image_types[size], x, y, {'debug': True})
+    except Exception as e:
+      err= read_exception_data(e)
+      pretty_print(err)
+
+  @classmethod
+  def translate_axis_to_coordinate_small(self):
+    self.translate_axis_to_coordinate('small')
+
+  @classmethod
+  def translate_axis_to_coordinate_medium(self):
+    self.translate_axis_to_coordinate('medium')
+
+  @classmethod
+  def translate_axis_to_coordinate_large(self):
+    self.translate_axis_to_coordinate('large')
+
+  @classmethod
+  def translate_axis_to_coordinate_extra_large(self):
+    self.translate_axis_to_coordinate('extra_large')
