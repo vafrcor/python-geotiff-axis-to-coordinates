@@ -146,13 +146,16 @@ class GeoTiffProcessor():
         translate=GeoTiffProcessor.read_coordinate(ds, tp, x, y)
         e={**eret, **translate}
         epoly.append(e)
+        e = x = y = None
         
       ret['coords'].append(epoly)
+      epoly=None
     
     if debug:
       print('DEBUG: ')
       print(json.dumps(ret, indent=2))
 
+    s = crs = None
     del ds, crs
     return ret
 
