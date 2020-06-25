@@ -6,14 +6,18 @@ from .utils import *
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# References: https://stackoverflow.com/questions/50191648/gis-geotiff-gdal-python-how-to-get-coordinates-from-pixel
+"""
+References: 
+- https://stackoverflow.com/questions/50191648/gis-geotiff-gdal-python-how-to-get-coordinates-from-pixel
+"""
 
 class GeoTiffProcessor():
 
   @staticmethod
   def read_coordinate(ds=None, transformPoint=None, x=0, y=0):
-    xoffset, px_w, rot1, yoffset, px_h, rot2 = ds.GetGeoTransform()
-
+    # xoffset, px_w, rot1, yoffset, px_h, rot2 = ds.GetGeoTransform()
+    xoffset, px_w, rot1, yoffset, rot2, px_h = ds.GetGeoTransform()
+    
     # This is how to get the coordinate in space.
     posX = px_w * x + rot1 * y + xoffset
     posY = rot2 * x + px_h * y + yoffset
@@ -23,9 +27,10 @@ class GeoTiffProcessor():
     posY += px_h / 2.0
       
     # Get lat-long coordinates
-    (lat, long, z) = transformPoint.TransformPoint(posX, posY)
+    # (lat, long, z) = transformPoint.TransformPoint(posX, posY)
+    (long, lat, z) = transformPoint.TransformPoint(posX, posY)
 
-    return {
+    r={
       'lat': lat,
       'long': long,
       'z': z,
@@ -38,6 +43,8 @@ class GeoTiffProcessor():
       'px_h': px_h,
       'rot2': rot2
     }
+    lat=long=z=posX=posY=xoffset=px_w=rot1=yoffset=px_h=rot2= None
+    return r
 
   @staticmethod
   def get_axis_point_coordinate(filepath=None, x=0, y=0, opt={}):
