@@ -56,17 +56,41 @@ class InteractiveMenu():
       pretty_print(err)
 
   @classmethod
-  def translate_axis_to_coordinate_small(self):
+  def translate_axis_point_to_coordinate_small(self):
     self.translate_axis_to_coordinate('small')
 
   @classmethod
-  def translate_axis_to_coordinate_medium(self):
+  def translate_axis_point_to_coordinate_medium(self):
     self.translate_axis_to_coordinate('medium')
 
   @classmethod
-  def translate_axis_to_coordinate_large(self):
+  def translate_axis_point_to_coordinate_large(self):
     self.translate_axis_to_coordinate('large')
 
   @classmethod
-  def translate_axis_to_coordinate_extra_large(self):
+  def translate_axis_point_to_coordinate_extra_large(self):
     self.translate_axis_to_coordinate('extra_large')
+
+  @classmethod
+  def translate_polygon_axis_points_to_coordinates(self):
+    try:
+      points=[
+        (100,100), (1100,100), (1100,1100), (100,1100)
+      ]
+      GeoTiffProcessor.get_polygon_axis_point_coordinates(self.image_types['medium'], points, {'debug': True})
+    except Exception as e:
+      err= read_exception_data(e)
+      pretty_print(err)
+
+  @classmethod
+  def translate_multi_poliygon_axis_points_to_coordinates(self):
+    try:
+      points=[
+        [(100,100), (1100,100), (1100,1100), (100,1100)],
+        [(100,2000), (1100,2000), (1100,3000), (100,3000)]
+      ]
+      GeoTiffProcessor.get_multi_polygon_axis_point_coordinates(self.image_types['large'], points, {'debug': True})
+    except Exception as e:
+      err= read_exception_data(e)
+      pretty_print(err)
+

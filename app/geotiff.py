@@ -4,6 +4,10 @@ import gdal
 from osgeo import osr 
 from .utils import *
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# References: https://stackoverflow.com/questions/50191648/gis-geotiff-gdal-python-how-to-get-coordinates-from-pixel
+
 class GeoTiffProcessor():
 
   @staticmethod
@@ -37,12 +41,7 @@ class GeoTiffProcessor():
 
   @staticmethod
   def get_axis_point_coordinate(filepath=None, x=0, y=0, opt={}):
-    # References: https://stackoverflow.com/questions/50191648/gis-geotiff-gdal-python-how-to-get-coordinates-from-pixel
-
     debug= True if ('debug' in opt and opt['debug'] == True) else False
-
-    # set base base path
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     # open the dataset and get the geo transform matrix
     file_fullpath= os.path.join(BASE_DIR, filepath)
@@ -68,7 +67,91 @@ class GeoTiffProcessor():
     
     if debug:
       print('DEBUG: ')
-      print(json.dumps(ret, indent=4))
+      print(json.dumps(ret, indent=2))
+
+    del ds, crs
+    return ret
+
+  @staticmethod
+  def get_polygon_axis_point_coordinates(filepath=None, points= (), opt={}):
+    debug= True if ('debug' in opt and opt['debug'] == True) else False
+
+    # open the dataset and get the geo transform matrix
+    file_fullpath= os.path.join(BASE_DIR, filepath)
+    file_size= get_file_size(file_fullpath, SIZE_UNIT.MB)
+    ds = gdal.Open(file_fullpath) 
+    crs = osr.SpatialReference()
+    # get CRS from dataset 
+    crs.ImportFromWkt(ds.GetProjectionRef())
+    # create lat/long crs with WGS84 datum
+    crsGeo = osr.SpatialReference()
+    crsGeo.ImportFromEPSG(4326) # 4326 is the EPSG id of lat/long crs 
+    tp = osr.CoordinateTransformation(crs, crsGeo)
+    
+    ret={
+      'filepath': file_fullpath,
+      'filesize': str(file_size)+' MB',
+      'points': points,
+      'coords': []
+    }
+
+    for point in points:
+      x,y= point
+      eret={
+        'x':x,
+        'y':y
+      }
+      translate=GeoTiffProcessor.read_coordinate(ds, tp, x, y)
+      e={**eret, **translate}
+      ret['coords'].append(e)
+    
+    if debug:
+      print('DEBUG: ')
+      print(json.dumps(ret, indent=2))
+
+    del ds, crs
+    return ret
+
+  @staticmethod
+  def get_multi_polygon_axis_point_coordinates(filepath=None, polygons= (), opt={}):
+    debug= True if ('debug' in opt and opt['debug'] == True) else False
+
+    # open the dataset and get the geo transform matrix
+    file_fullpath= os.path.join(BASE_DIR, filepath)
+    file_size= get_file_size(file_fullpath, SIZE_UNIT.MB)
+    ds = gdal.Open(file_fullpath) 
+    crs = osr.SpatialReference()
+    # get CRS from dataset 
+    crs.ImportFromWkt(ds.GetProjectionRef())
+    # create lat/long crs with WGS84 datum
+    crsGeo = osr.SpatialReference()
+    crsGeo.ImportFromEPSG(4326) # 4326 is the EPSG id of lat/long crs 
+    tp = osr.CoordinateTransformation(crs, crsGeo)
+    
+    ret={
+      'filepath': file_fullpath,
+      'filesize': str(file_size)+' MB',
+      'polygons': polygons,
+      'coords': []
+    }
+
+    for polygon in polygons:
+      epoly=[]
+      for point in polygon:
+        x,y= point
+        eret={
+          'x':x,
+          'y':y
+        }
+        translate=GeoTiffProcessor.read_coordinate(ds, tp, x, y)
+        e={**eret, **translate}
+        epoly.append(e)
+        
+      ret['coords'].append(epoly)
+    
+    if debug:
+      print('DEBUG: ')
+      print(json.dumps(ret, indent=2))
 
     del ds, crs
     return ret
