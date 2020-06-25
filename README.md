@@ -44,4 +44,4 @@
 ![](/data/screenshots/menu-5-get-coordinates-from-polygon-medium-size-image.png?raw=true)
 
 #### Menu 6 - Translate Multi Polygon Axis to Coordinate (Large file size)
-![](/data/screenshots/menu-6-get-coordinates-from-polygon-large-size-image?raw=true)
+![](/data/screenshots/menu-6-get-coordinates-from-polygon-large-size-image.png?raw=true)
