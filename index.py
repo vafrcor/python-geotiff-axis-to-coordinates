@@ -7,6 +7,6 @@ if __name__ == "__main__":
     'translate_axis_point_to_coordinate_large': 'Translate AXIS Point to Coordinate (Large Image)',
     'translate_axis_point_to_coordinate_extra_large': 'Translate AXIS Point to Coordinate (Extra Large Image)',
     'translate_polygon_axis_points_to_coordinates': 'Translate Polygon Axis Points to Coordinates (Medium Image)',
-    'translate_multi_poliygon_axis_points_to_coordinates': 'Translate Multi Polygon Axis Points to Coordinates (Large Image)'  
+    'translate_multi_poliygon_axis_points_to_coordinates': 'Translate Multi Polygon Axis Points to Coordinates (Medium Image)'  
   })
   InteractiveMenu.show_menu()

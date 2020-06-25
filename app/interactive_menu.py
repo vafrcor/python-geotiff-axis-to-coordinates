@@ -89,7 +89,7 @@ class InteractiveMenu():
         [(100,100), (1100,100), (1100,1100), (100,1100)],
         [(100,2000), (1100,2000), (1100,3000), (100,3000)]
       ]
-      GeoTiffProcessor.get_multi_polygon_axis_point_coordinates(self.image_types['large'], points, {'debug': True})
+      GeoTiffProcessor.get_multi_polygon_axis_point_coordinates(self.image_types['medium'], points, {'debug': True})
     except Exception as e:
       err= read_exception_data(e)
       pretty_print(err)
