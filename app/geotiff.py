@@ -1,5 +1,4 @@
 import os, math, json
-# import cv2
 import gdal
 from osgeo import osr 
 from .utils import *
