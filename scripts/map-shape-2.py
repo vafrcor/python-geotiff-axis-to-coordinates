@@ -15,8 +15,8 @@ show_result= True if args['show_result'] == "True" else False
 
 # Main Logic
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-img_path= args['image'] if 'image' in args else 'data/edge-detection/sample-03.jpg'
-# print(args)
+img_path= args['image'] if args['image'] is not None else 'data/edge-detection/sample-03.jpg'
+img_extension = os.path.splitext(img_path)[1]
 
 image = cv2.imread(os.path.join(BASE_DIR, img_path))
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -37,9 +37,9 @@ if show_result:
   cv2.imshow('Result - Final', image)
 
 # Saving results 
-cv2.imwrite(os.path.join(BASE_DIR, img_path.replace('.jpg','-method-2-thresh.png')), thresh)
-cv2.imwrite(os.path.join(BASE_DIR, img_path.replace('.jpg','-method-2-canny.png')), canny)
-cv2.imwrite(os.path.join(BASE_DIR, img_path.replace('.jpg','-method-2-image.png')), image)
+cv2.imwrite(os.path.join(BASE_DIR, img_path.replace(img_extension,'-method-2-thresh'+img_extension)), thresh)
+cv2.imwrite(os.path.join(BASE_DIR, img_path.replace(img_extension,'-method-2-canny'+img_extension)), canny)
+cv2.imwrite(os.path.join(BASE_DIR, img_path.replace(img_extension,'-method-2-image'+img_extension)), image)
 
 # Exit 
 cv2.waitKey(0)

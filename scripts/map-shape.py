@@ -18,7 +18,9 @@ show_result= True if args['show_result'] == "True" else False
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # load image and convert to hsv
-img_path= args['image'] if 'image' in args else 'data/edge-detection/sample-03.jpg'
+img_path= args['image'] if args['image'] is not None else 'data/edge-detection/sample-03.jpg'
+img_extension = os.path.splitext(img_path)[1]
+
 img = cv2.imread(os.path.join(BASE_DIR, img_path))
 
 # draw gray box around image to detect edge buildings
@@ -67,9 +69,9 @@ if show_result:
   cv2.imshow("Result - Final", img)
 
 # Saving results 
-cv2.imwrite(os.path.join(BASE_DIR, img_path.replace('.jpg','-method-1-hsv.png')), hsv)
-cv2.imwrite(os.path.join(BASE_DIR, img_path.replace('.jpg','-method-1-thresh.png')), thresh)
-cv2.imwrite(os.path.join(BASE_DIR, img_path.replace('.jpg','-method-1-image.png')), img)
+cv2.imwrite(os.path.join(BASE_DIR, img_path.replace(img_extension,'-method-1-hsv'+img_extension)), hsv)
+cv2.imwrite(os.path.join(BASE_DIR, img_path.replace(img_extension,'-method-1-thresh'+img_extension)), thresh)
+cv2.imwrite(os.path.join(BASE_DIR, img_path.replace(img_extension,'-method-1-image'+img_extension)), img)
 
 # Exit 
 cv2.waitKey(0)

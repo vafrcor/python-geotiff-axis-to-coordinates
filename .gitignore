@@ -146,6 +146,9 @@ data/edge-detection/*
 !data/index.html
 !data/screenshots/
 !data/edge-detection/sample-01.jpg
+!data/edge-detection/sample-02.jpg
 !data/edge-detection/sample-03.jpg
+!data/edge-detection/sample-04.png
+!data/edge-detection/sample-05.png
 !data/edge-detection/shapes_and_colors.jpg
 
