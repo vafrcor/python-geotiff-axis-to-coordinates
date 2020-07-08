@@ -10,8 +10,10 @@ import argparse
 ap = argparse.ArgumentParser()
 ap.add_argument("-sr", "--show_result", required=False, help="whether need to show result or not", default=False, type=str)
 ap.add_argument("-i", "--image", required=False, help="image source", default=None, type=str)
+ap.add_argument("-dbg", "--debug", required=False, help="whether need to show debug or not", default="False", type=str)
 args = vars(ap.parse_args())
 show_result= True if args['show_result'] == "True" else False
+show_debug= True if args['debug'] == "True" else False
 
 # Main Logic
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -32,12 +34,14 @@ for c in cnts:
 
 # Showing results
 if show_result:
+  cv2.imshow('Result - Gray', gray)
   cv2.imshow('Result - Thresh', thresh)
   cv2.imshow('Result - Canny', canny)
   cv2.imshow('Result - Final', image)
 
 # Saving results 
 cv2.imwrite(os.path.join(BASE_DIR, img_path.replace(img_extension,'-method-2-thresh'+img_extension)), thresh)
+cv2.imwrite(os.path.join(BASE_DIR, img_path.replace(img_extension,'-method-2-gray'+img_extension)), gray)
 cv2.imwrite(os.path.join(BASE_DIR, img_path.replace(img_extension,'-method-2-canny'+img_extension)), canny)
 cv2.imwrite(os.path.join(BASE_DIR, img_path.replace(img_extension,'-method-2-image'+img_extension)), image)
 

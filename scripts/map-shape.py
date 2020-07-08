@@ -11,8 +11,10 @@ import os, argparse
 ap = argparse.ArgumentParser()
 ap.add_argument("-sr", "--show_result", required=False, help="whether need to show result or not", default=False, type=str)
 ap.add_argument("-i", "--image", required=False, help="image source", default=None, type=str)
+ap.add_argument("-dbg", "--debug", required=False, help="whether need to show debug or not", default="False", type=str)
 args = vars(ap.parse_args())
 show_result= True if args['show_result'] == "True" else False
+show_debug= True if args['debug'] == "True" else False
 
 # Main Code
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

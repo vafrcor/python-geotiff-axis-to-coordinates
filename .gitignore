@@ -151,4 +151,7 @@ data/edge-detection/*
 !data/edge-detection/sample-04.png
 !data/edge-detection/sample-05.png
 !data/edge-detection/shapes_and_colors.jpg
+data/map-download/output/*
+data/map-download/temp/*
+
 
