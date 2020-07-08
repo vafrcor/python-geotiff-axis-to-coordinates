@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import hsv_to_rgb
 import argparse, pprint
 from copy import copy
+import imutils
 from app.shape_detector import ShapeDetector
 
 # Additional Parser
@@ -54,6 +55,11 @@ if show_debug:
 
 # Start masking the image here
 image= cv2.imread(os.path.join(BASE_DIR, img_path), 1)
+
+# image_origin= cv2.imread(os.path.join(BASE_DIR, img_path), 1)
+# image = imutils.resize(image_origin, width=300)
+# ratio = image_origin.shape[0] / float(image.shape[0])
+
 img_rgb= cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 hsv= cv2.cvtColor(img_rgb, cv2.COLOR_RGB2HSV)
 brown = (float(color_codes[0]), float(color_codes[1]), float(color_codes[2]))
@@ -65,7 +71,7 @@ darker_brown = (float(color_codes[0])+30, float(color_codes[1])+30, float(color_
 mask = cv2.inRange(hsv, brown, darker_brown)
 final= cv2.bitwise_and(image, image, mask=mask)
 
-# findcontours
+# Find Contours
 json_contour_filepath= os.path.join(BASE_DIR, img_base_results_path+img_name+'-contours-method-3.json')
 
 final_gray = cv2.cvtColor(final, cv2.COLOR_BGR2GRAY)
@@ -74,13 +80,56 @@ ret, final_thresh = cv2.threshold(final_blurred, 127, 255, 0)
 # contours, hierarchy = cv2.findContours(final_thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 contours, hierarchy = cv2.findContours(final_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+ctr_json_str= json.dumps({'countours': contours, 'hierarchy': hierarchy}, default=json_np_default_parser)
+ctr_json= json.loads(ctr_json_str)
+# new_ctrs=[]
+# for shape in ctr_json:
+
 
 with open(json_contour_filepath, 'w') as outfile:
-    json.dump(contours, outfile, default=json_np_default_parser)
+  # json.dump(contours, outfile, default=json_np_default_parser)
+  json.dump(ctr_json, outfile)
 
-final_wctrs= copy(image)
+# final_wctrs= copy(image)
+# final_wctrs= copy(image_origin)
+final_wctrs= copy(final)
 for c in contours:
+  # c = c.astype("float")
+  # c *= ratio
+  # c = c.astype("int")
   cv2.drawContours(final_wctrs, [c], 0, (36, 255, 12), 2)
+
+"""
+
+# Analyze contours
+# - load the image and resize it to a smaller factor so that
+# - the shapes can be approximated better
+final_shape_ctrs= copy(final_thresh)
+resized = imutils.resize(final_shape_ctrs, width=300)
+ratio = final_shape_ctrs.shape[0] / float(resized.shape[0])
+cnts = cv2.findContours(final_shape_ctrs, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+cnts = imutils.grab_contours(cnts)
+# cnts = imutils.grab_contours((contours, hierarchy))
+
+sd = ShapeDetector()
+
+# loop over the contours
+for c in cnts:
+  # compute the center of the contour, then detect the name of the
+  # shape using only the contour
+  M = cv2.moments(c)
+  cX = int((M["m10"] / M["m00"]) * ratio)
+  cY = int((M["m01"] / M["m00"]) * ratio)
+  shape = sd.detect(c)
+  # multiply the contour (x, y)-coordinates by the resize ratio,
+  # then draw the contours and the name of the shape on the image
+  c = c.astype("float")
+  c *= ratio
+  c = c.astype("int")
+  cv2.drawContours(final_shape_ctrs, [c], -1, (0, 255, 0), 2)
+  cv2.putText(final_shape_ctrs, shape, (cX, cY), cv2.FONT_HERSHEY_SIMPLEX,
+    0.5, (255, 255, 255), 2)
+"""
 
 # save images
 result_ftemplate= img_base_results_path+img_name+'-<fnm>'+img_extension;
@@ -93,6 +142,8 @@ cv2.imwrite(os.path.join(BASE_DIR, result_ftemplate.replace('<fnm>','method-3-st
 cv2.imwrite(os.path.join(BASE_DIR, result_ftemplate.replace('<fnm>','method-3-step-7-final-blurred')), final_blurred)
 cv2.imwrite(os.path.join(BASE_DIR, result_ftemplate.replace('<fnm>','method-3-step-8-final-thresh')), final_thresh)
 cv2.imwrite(os.path.join(BASE_DIR, result_ftemplate.replace('<fnm>','method-3-step-9-image-final-with-contours')), final_wctrs)
+# cv2.imwrite(os.path.join(BASE_DIR, result_ftemplate.replace('<fnm>','method-3-step-9-2-image-final-resized')), resized)
+# cv2.imwrite(os.path.join(BASE_DIR, result_ftemplate.replace('<fnm>','method-3-step-10-image-final-with-shape-contours')), final_shape_ctrs)
 
 
 # show the final image
@@ -106,7 +157,7 @@ if show_result:
   cv2.imshow("Step - 7 (Final - Gray Blurred)", final_blurred)
   cv2.imshow("Step - 8 (Final - Gray Thresh)", final_thresh)
   cv2.imshow("Step - 9 (Final - with contours)", final_wctrs)
-  
+  # cv2.imshow("Step - 10 (Final - with shape contours)", final_shape_ctrs)
   cv2.waitKey(0)
   cv2.destroyAllWindows()
 

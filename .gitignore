@@ -153,5 +153,6 @@ data/edge-detection/*
 !data/edge-detection/shapes_and_colors.jpg
 data/map-download/output/*
 data/map-download/temp/*
+data/geo-map/*
 
 
