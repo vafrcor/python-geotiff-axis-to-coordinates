@@ -45,3 +45,12 @@ def get_file_size(file_name, size_type = SIZE_UNIT.BYTES ):
   """ Get file in size in given unit like KB, MB or GB"""
   size = os.path.getsize(file_name)
   return convert_unit(size, size_type)
+
+# Additional Parser for Numpy Array
+def json_np_default_parser(obj):
+  if type(obj).__module__ == np.__name__:
+    if isinstance(obj, np.ndarray):
+      return obj.tolist()
+    else:
+      return obj.item()
+  raise TypeError('Unknown type:', type(obj))

@@ -10,6 +10,7 @@ import argparse, pprint
 from copy import copy
 import imutils
 from app.shape_detector import ShapeDetector
+from app.geotiff import GeoTiffProcessor
 
 # Additional Parser
 def json_np_default_parser(obj):
@@ -73,6 +74,7 @@ final= cv2.bitwise_and(image, image, mask=mask)
 
 # Find Contours
 json_contour_filepath= os.path.join(BASE_DIR, img_base_results_path+img_name+'-contours-method-3.json')
+json_contour_debug_filepath= os.path.join(BASE_DIR, img_base_results_path+img_name+'-contours-method-3-debug.json')
 
 final_gray = cv2.cvtColor(final, cv2.COLOR_BGR2GRAY)
 final_blurred = cv2.GaussianBlur(final_gray, (5, 5), 0)
@@ -80,19 +82,39 @@ ret, final_thresh = cv2.threshold(final_blurred, 127, 255, 0)
 # contours, hierarchy = cv2.findContours(final_thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 contours, hierarchy = cv2.findContours(final_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-ctr_json_str= json.dumps({'countours': contours, 'hierarchy': hierarchy}, default=json_np_default_parser)
+ctr_json_str= json.dumps({'contours': contours, 'hierarchy': hierarchy}, default=json_np_default_parser)
 ctr_json= json.loads(ctr_json_str)
-# new_ctrs=[]
-# for shape in ctr_json:
 
+ctr_points=[]
+for cidx in range(len(ctr_json['contours'])):
+  ctr_points.append(list(map(lambda x: x[0], ctr_json['contours'][cidx])))
+
+# new_ctrs=[]
+# new_ctrs_debug=[]
+# for cidx in range(len(contours)):
+#   contour= contours[cidx]
+#   peri = cv2.arcLength(contour, True)
+#   approx = cv2.approxPolyDP(contour, 0.04 * peri, True)
+#   new_ctrs_debug.append({
+#     'peri': peri,
+#     'approx': approx,
+#     'coords': json.dumps(list(map(lambda x: x[0], ctr_json['contours'][cidx])))
+#   })
+#   new_ctrs.append(approx)
 
 with open(json_contour_filepath, 'w') as outfile:
   # json.dump(contours, outfile, default=json_np_default_parser)
-  json.dump(ctr_json, outfile)
+  json.dump(ctr_points, outfile)
+  # json.dump(new_ctrs, outfile, default=json_np_default_parser)
 
-# final_wctrs= copy(image)
+# if show_debug:
+#   with open(json_contour_debug_filepath, 'w') as outfile2:
+#     json.dump(new_ctrs_debug, outfile2, default=json_np_default_parser)
+
+final_wctrs= copy(image)
 # final_wctrs= copy(image_origin)
-final_wctrs= copy(final)
+# final_wctrs= copy(final)
+# for c in new_ctrs:
 for c in contours:
   # c = c.astype("float")
   # c *= ratio
@@ -100,7 +122,6 @@ for c in contours:
   cv2.drawContours(final_wctrs, [c], 0, (36, 255, 12), 2)
 
 """
-
 # Analyze contours
 # - load the image and resize it to a smaller factor so that
 # - the shapes can be approximated better
@@ -145,6 +166,10 @@ cv2.imwrite(os.path.join(BASE_DIR, result_ftemplate.replace('<fnm>','method-3-st
 # cv2.imwrite(os.path.join(BASE_DIR, result_ftemplate.replace('<fnm>','method-3-step-9-2-image-final-resized')), resized)
 # cv2.imwrite(os.path.join(BASE_DIR, result_ftemplate.replace('<fnm>','method-3-step-10-image-final-with-shape-contours')), final_shape_ctrs)
 
+def clean_up():
+  global contours, hierarchy, new_ctrs, image, hsv_light_brown, img_rgb, hsv, final, final_gray, final_wctrs, final_blurred, final_thresh
+  del contours, hierarchy, image, hsv_light_brown, img_rgb, hsv, final, final_gray, final_wctrs, final_blurred, final_thresh
+  # del new_ctrs
 
 # show the final image
 if show_result:
@@ -166,3 +191,7 @@ if show_result:
   # plt.title('OSM Image')
   # plt.xticks([]), plt.yticks([])
   # plt.show()
+
+  clean_up()
+else:
+  clean_up()

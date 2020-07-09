@@ -27,23 +27,28 @@ class InteractiveMenu():
       x+=1
       print (str(x)+' - '+mv)
 
-    imode = int(input("Please enter a mode: "))
-    imx= imode - 1
+    try:
+      imode = int(input("Please enter a mode: "))
+      imx= imode - 1
 
-    if imx < len(mkeys):
+      if imx < len(mkeys):
+        write_separator()
+        getattr(self, mkeys[imx])()
+      else:
+        print ("unknown mode")
+
+      time.sleep(2)
       write_separator()
-      getattr(self, mkeys[imx])()
-    else:
+      next_menu = str(input("Do you wanted to choose another menu? [y/n]: "))
+      if next_menu.lower() == 'y':
+        self.show_menu()
+      else:
+        print ("Thank you for tried this menu. Bye...")
+        exit()
+    except Exception as e:
       print ("unknown mode")
-
-    time.sleep(2)
-    write_separator()
-    next_menu = str(input("Do you wanted to choose another menu? [y/n]: "))
-    if next_menu.lower() == 'y':
+      write_separator()
       self.show_menu()
-    else:
-      print ("Thank you for tried this menu. Bye...")
-      exit()
 
   @classmethod
   def translate_axis_to_coordinate(self, size):
