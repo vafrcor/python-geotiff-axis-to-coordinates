@@ -48,9 +48,18 @@ def get_file_size(file_name, size_type = SIZE_UNIT.BYTES ):
 
 # Additional Parser for Numpy Array
 def json_np_default_parser(obj):
+  import numpy as np 
+  
   if type(obj).__module__ == np.__name__:
     if isinstance(obj, np.ndarray):
       return obj.tolist()
     else:
       return obj.item()
   raise TypeError('Unknown type:', type(obj))
+
+
+def bgr_color_to_hex(color: tuple):
+  return '#%02x%02x%02x' % (color[0], color[1], color[2])
+
+def bgr_color_to_rgb_hex(color: tuple):
+  return '#%02x%02x%02x' % (color[2], color[1], color[0])

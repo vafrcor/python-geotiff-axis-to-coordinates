@@ -164,5 +164,3 @@ class GeoTiffProcessor():
     s = crs = None
     del ds, crs
     return ret
-
-  
