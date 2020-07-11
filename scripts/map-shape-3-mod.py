@@ -49,6 +49,7 @@ hsv_light_brown = cv2.cvtColor(light_brown,cv2.COLOR_BGR2HSV)
 color_codes=hsv_light_brown[0][0]
 
 """
+
 clr_building_brown= image[794,623]
 clr_building_dark_brown= image[801,618]
 clr_land_light_brown= image[586,967]
@@ -58,6 +59,7 @@ if show_debug:
   print('-> Color \\ Building \\ Brown: {} (BGR Hex: {} | RGB Hex: {})'.format(clr_building_brown, bgr_color_to_hex(clr_building_brown), bgr_color_to_rgb_hex(clr_building_brown)))  
   print('-> Color \\ Building \\ Dark Brown: {} (BGR Hex: {} | RGB Hex: {})'.format(clr_building_dark_brown, bgr_color_to_hex(clr_building_dark_brown), bgr_color_to_rgb_hex(clr_building_dark_brown)))
   print('-> Color \\ Land \\ Light Brown: {} (BGR Hex: {} | RGB Hex: {})'.format(clr_land_light_brown, bgr_color_to_hex(clr_land_light_brown), bgr_color_to_rgb_hex(clr_land_light_brown)))
+
 """
 
 # image_origin= cv2.imread(os.path.join(BASE_DIR, img_path), 1)
@@ -76,6 +78,8 @@ darker_brown = (float(color_codes[0])+30, float(color_codes[1])+30, float(color_
 if show_debug:
   print('-> HSV Color Code \\ Brown: ', brown) 
   print('-> HSV Color Code \\ Darker Brown: ', darker_brown)  
+
+# exit()
 
 mask = cv2.inRange(hsv, brown, darker_brown)
 final= cv2.bitwise_and(image, image, mask=mask)

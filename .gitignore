@@ -154,5 +154,6 @@ data/edge-detection/*
 data/map-download/output/*
 data/map-download/temp/*
 data/geo-map/*
-
+data/logs/*
+!data/logs/index.html
 
