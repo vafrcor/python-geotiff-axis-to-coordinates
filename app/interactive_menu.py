@@ -1,6 +1,7 @@
 import time
-from .utils import *
-from .geotiff import GeoTiffProcessor
+from app.utils import *
+from app.geotiff import GeoTiffProcessor
+from app.geo_building_detector import GeoBuildingDetector
 
 class InteractiveMenu():
   name='Example Menu'
@@ -32,8 +33,11 @@ class InteractiveMenu():
       imx= imode - 1
 
       if imx < len(mkeys):
-        write_separator()
-        getattr(self, mkeys[imx])()
+        if mkeys[imx] == 'exit':
+          exit()
+        else:
+          write_separator()
+          getattr(self, mkeys[imx])()
       else:
         print ("unknown mode")
 
@@ -46,7 +50,8 @@ class InteractiveMenu():
         print ("Thank you for tried this menu. Bye...")
         exit()
     except Exception as e:
-      print ("unknown mode")
+      pretty_print("unknown mode (an error occured)", {'error': read_exception_data(e)})
+      # print ("unknown mode (an error occured)", {'error': read_exception_data(e)})
       write_separator()
       self.show_menu()
 
@@ -99,3 +104,10 @@ class InteractiveMenu():
       err= read_exception_data(e)
       pretty_print(err)
 
+  @classmethod
+  def get_building_geojson_from_street_map(self):
+    gbd= GeoBuildingDetector({
+      'show_result': False
+    })
+    r= gbd.get_geojson(('data/edge-detection/sample-07.png','data/edge-detection/sample-07.tif', {}))
+    pretty_print('Result: ', r)

@@ -17,9 +17,10 @@ def read_exception_data(e):
     r['traceback'] = traceback.format_tb(tb)
   return  r
 
-def pretty_print(data):
+def pretty_print(message: str='', data: dict=None):
   import pprint
-  pp = pprint.PrettyPrinter(indent=4)
+  pp = pprint.PrettyPrinter(indent=2)
+  print(message)
   pp.pprint(data)
 
 

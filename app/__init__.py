@@ -1,16 +1,16 @@
-import logging, json, configparser, sys
+import logging, json, configparser, os, sys
 import logging.handlers
 
 # from pythonjsonlogger import jsonlogger
 from logstash_formatter import LogstashFormatterV1
 
-from .geotiff import *
-from .interactive_menu import *
-from .shape_detector import *
+# from .geotiff import *
+# from .interactive_menu import *
+# from .shape_detector import *
 
 # Init root app path
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0,BASE_DIR)
+# sys.path.insert(0,BASE_DIR)
 
 # Config 
 config_filepath= os.path.join(BASE_DIR, 'config.ini')
@@ -54,3 +54,5 @@ for h in log_handlers:
 # logger.warning('Config: ', {'config': config['test']['foo']})
 # logger.error('Config: ', {'config': config['test']['foo']})
 # logger.debug('Config: ', {'config': config['test']['foo']})
+
+# __all__ = ["config","logger","InteractiveMenu","BASE_DIR"]
