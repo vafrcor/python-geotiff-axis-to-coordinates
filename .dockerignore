@@ -1,0 +1,23 @@
+__pycache__/
+app/__pycache__/
+ENV/
+data/*.*
+data/edge-detection/*
+!data/index.html
+# !data/sample.zip
+!data/sample.7z
+!data/screenshots/
+!data/edge-detection/sample-01.jpg
+!data/edge-detection/sample-02.jpg
+!data/edge-detection/sample-03.jpg
+!data/edge-detection/sample-04.png
+!data/edge-detection/sample-05.png
+!data/edge-detection/sample-06.png
+!data/edge-detection/sample-07.png
+!data/edge-detection/sample-07.tif
+!data/edge-detection/shapes_and_colors.jpg
+data/map-download/output/*
+data/map-download/temp/*
+data/geo-map/*
+data/logs/*
+!data/logs/index.html
