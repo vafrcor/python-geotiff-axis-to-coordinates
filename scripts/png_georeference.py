@@ -54,6 +54,10 @@ def georeference_file(path, lon_min, lon_max, lat_min, lat_max, z):
 if __name__ == "__main__":
   # Argument Parsing
   # example: python scripts/png_georeference.py -i='data/geo-map/malang-monumen-tugu.png' -z=5 -latmn=-7.975113876000217 -latmx=-7.9788751339455155 -lonmn=112.63089179992677 -lonmx=112.63672292232515
+
+  # python scripts/png_georeference.py -i='data/geo-map/map-monumen-tugu-carto-colorfull.png' -z=18 -latmn=-7.974875248648185 -latmx=-7.979311194447356 -lonmn=112.63118147850038 -lonmx=112.63701260089876
+  # python scripts/png_georeference.py -i='data/geo-map/map-monumen-tugu-carto-grayscale.png' -z=18 -latmn=-7.975013368667483 -latmx=-7.979183688915689 -lonmn=112.63118147850038 -lonmx=112.63701260089876
+  
   ap = argparse.ArgumentParser()
   ap.add_argument("-i", "--image", required=True, help="Image Source", default=None, type=str)
   ap.add_argument("-z", "--zoom", required=True, help="Zoom Level", default=None, type=int)

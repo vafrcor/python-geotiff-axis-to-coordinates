@@ -17,46 +17,26 @@ class GeoBuildingDetector():
     'color_preset': 'osm'
   }
   data = {
-    #Color Preset using BGR Format 
+    # Color Preset using BGR Format (from each map provider)
     'color_presets': {
       'osm': {
         'building': {
           'fill': (202, 208, 216),
           'border': {
             'type': 'relative',
-            # 'value': (30, 30, 30)
             'value': ('+30', '+30', '+30')
           },
-          'contour': (36, 255, 12),
-          # 'masking_color_mode': cv2.COLOR_BGR2HSV
+          'contour': (36, 255, 12)
         }
       },
       'carto': {
         'building': {
-          # 'fill': (227, 239, 246),
-          # 'fill': (168, 179, 186),
-          'fill': (128, 139, 146),
+          'fill': (228, 239, 246),
           'border': {
             'type': 'exact',
-            # 'value': (157, 172, 182),
-            # 'value': (148, 160, 168),
-            'value': (100, 119, 132),
-            # 'value': (205, 220, 230),
-            # 'value': ('+30', '+30', '+30')
+            'value': (207, 220, 228)
           },
-          'contour': (36, 255, 12),
-          # 'masking_color_mode': cv2.COLOR_BGR2HSV,
-          'adjust_contrast': {
-            'alpha': 1.0,
-            'beta': -80
-          },
-          'sharp_image': {
-            'kernel_size': (5, 5), 
-            'sigma': 0, 
-            'amount': 1.0, 
-            'threshold': 0
-          }
-          # 'masking_color_mode': cv2.COLOR_BGR2LUV
+          'contour': (36, 255, 12)
         }
       },
       'carto_gs': {
@@ -66,8 +46,7 @@ class GeoBuildingDetector():
             'type': 'exact',
             'value': (222, 222, 222)
           },
-          'contour': (36, 255, 12),
-          # 'masking_color_mode': cv2.COLOR_BGR2HSV
+          'contour': (36, 255, 12)
         }
       },
       'google': {}
@@ -88,28 +67,6 @@ class GeoBuildingDetector():
     if not os.path.exists(self.data['path']['result']):
       os.makedirs(self.data['path']['result'])
 
-  def __del__(self):
-    self.options = {
-      'show_result': False,
-      'save_result': True,
-      'color_preset': 'osm'
-    }
-
-  def unsharp_mask(self, image, kernel_size=(5, 5), sigma=1.0, amount=1.0, threshold=0):
-    """
-    Return a sharpened version of the image, using an unsharp mask.
-    ref: https://stackoverflow.com/a/55590133/12836447
-    """
-    blurred = cv2.GaussianBlur(image, kernel_size, sigma)
-    sharpened = float(amount + 1) * image - float(amount) * blurred
-    sharpened = np.maximum(sharpened, np.zeros(sharpened.shape))
-    sharpened = np.minimum(sharpened, 255 * np.ones(sharpened.shape))
-    sharpened = sharpened.round().astype(np.uint8)
-    if threshold > 0:
-        low_contrast_mask = np.absolute(image - blurred) < threshold
-        np.copyto(sharpened, image, where=low_contrast_mask)
-    return sharpened
-
   def get_geojson(self, filepath: tuple = (), opts: dict = {}) -> dict:
     # [Step - 1] Get image + check color sampling
     img_path = os.path.join(BASE_DIR, filepath[0])
@@ -117,79 +74,66 @@ class GeoBuildingDetector():
     img_extension = os.path.splitext(img_path)[1]
     img_name = ntpath.basename(img_path).replace(img_extension, '')
     img_base_path = img_path.replace(ntpath.basename(img_path), '')
+    image = cv2.imread(img_path, 1)
 
     color_preset = self.data['color_presets'][self.options['color_preset']]
-    logger.info('Color Preset: ', {'color_preset': color_preset})
+    fill_color = np.uint8([
+      [color_preset['building']['fill']]
+    ])
 
-    image_origin = cv2.imread(img_path, 1)
-    if 'sharp_image' in color_preset['building']:
-      sharp_img= self.unsharp_mask(image_origin, **color_preset['building']['sharp_image'])
-      image_origin= copy(image_origin)
-
-    image_new_contrast=[]
-    if 'adjust_contrast' in color_preset['building']:
-      image = cv2.convertScaleAbs(image_origin, alpha=color_preset['building']['adjust_contrast']['alpha'], beta=color_preset['building']['adjust_contrast']['beta'])
-      image_new_contrast=[
-        cv2.convertScaleAbs(image_origin, alpha=1.0, beta=-10),
-        cv2.convertScaleAbs(image_origin, alpha=1.0, beta=-20),
-        cv2.convertScaleAbs(image_origin, alpha=1.0, beta=-30),
-        cv2.convertScaleAbs(image_origin, alpha=1.0, beta=-50),
-        cv2.convertScaleAbs(image_origin, alpha=1.0, beta=-60)
-      ]
-    else:
-      image = copy(image_origin)
-    
-    light_brown = np.uint8([[color_preset['building']['fill']]])
-
-    # Enhance image (ref: https://chrisalbon.com/machine_learning/preprocessing_images/enhance_contrast_of_greyscale_image/)
-    # image = cv2.imread('images/plane_256x256.jpg', cv2.IMREAD_GRAYSCALE)
-    # image_enhanced = cv2.equalizeHist(image)
-    
     # Convert BGR to HSV for masking
-    color_codes = []
-    hsv_fill_color = cv2.cvtColor(light_brown, cv2.COLOR_BGR2HSV)
-    # hsv_fill_color = cv2.cvtColor(light_brown, color_preset['building']['masking_color_mode'])
+    # color_codes = []
+    hsv_fill_color = cv2.cvtColor(fill_color, cv2.COLOR_BGR2HSV)
 
     # for index in hsv_fill_color: 
-    # color_codes = index[0]
-    color_codes = hsv_fill_color[0][0]
+    #   color_codes = index[0]
+    hsv_color_codes = hsv_fill_color[0][0]
 
     # [Step - 2] Do masking on HSV Image
     img_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    # img_rgb =copy(image)
-
     hsv = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2HSV)
-    # hsv = cv2.cvtColor(img_rgb, color_preset['building']['masking_color_mode'])
+    hsv_fill_color_float = (float(hsv_color_codes[0]), float(hsv_color_codes[1]), float(hsv_color_codes[2]))
 
-    fill_color = (float(color_codes[0]), float(color_codes[1]), float(color_codes[2]))
-
-    find_border_color=[]
     if color_preset['building']['border']['type'] == 'relative':
-      temp=[]
-      for idx, bbv in enumerate(color_preset['building']['border']['value'], 0):
+      border_color= []
+      hsv_border_color= []
+      for idx, bbv in enumerate(color_preset['building']['border']['value'], start=0):
         if bbv[0] == '+':
-          temp.append(float(color_codes[idx]) + float(bbv[1:]))
+          border_color.append(color_preset['building']['fill'][idx] + float(bbv[1:]))
+          hsv_border_color.append(hsv_fill_color_float[idx] + float(bbv[1:]))
         elif bbv[0] == '-':
-          temp.append(float(color_codes[idx]) - float(bbv[1:]))
+          border_color.append(color_preset['building']['fill'][idx] - float(bbv[1:]))
+          hsv_border_color.append(hsv_fill_color_float[idx] - float(bbv[1:]))
         else:
-          temp.append(float(bbv))
-      border_color= tuple(temp)
+          # exact value
+          hsv_list=[]
+          if idx == 0:
+            hsv_list=(hsv_list, 0, 0)
+          elif idx == 1:
+            hsv_list=(0, hsv_list, 0)
+          else:
+            hsv_list=(0, 0, hsv_list)
 
-      # border_color = (float(color_codes[0]) + color_preset['building']['border']['value'][0], float(color_codes[1]) + color_preset['building']['border']['value'][1], float(color_codes[2]) + color_preset['building']['border']['value'][2])
+          temp_color= cv2.cvtColor(np.uint8([[hsv_list]]), cv2.COLOR_HSV2BGR)
+          border_color.append(temp_color[0][0][idx])
+          hsv_border_color.append(float(bbv))
+
+      # hsv_border_color = (float(hsv_color_codes[0]) + color_preset['building']['border']['value'][0], float(hsv_color_codes[1]) + color_preset['building']['border']['value'][1], float(hsv_color_codes[2]) + hsv_color_codes['building']['border']['value'][2])
+
     else :
-      find_border_color = cv2.cvtColor(np.uint8([[color_preset['building']['border']['value']]]), cv2.COLOR_BGR2HSV)
-      # find_border_color = cv2.cvtColor(np.uint8([[color_preset['building']['border']['value']]]), color_preset['building']['masking_color_mode'])
-      border_color= (float(find_border_color[0][0][0]), float(find_border_color[0][0][1]), float(find_border_color[0][0][2]))
+      border_color = color_preset['building']['border']['value']
+      hsv_border_color = cv2.cvtColor(border_color, cv2.COLOR_BGR2HSV)
 
     logger.debug(self.logger_base_text + 'Color Info', {
       'fill_color': fill_color,
+      'hsv_fill_color': hsv_fill_color,
+      'hsv_fill_color_float': hsv_fill_color_float,
       'border_color': border_color,
-      'float_border_color': find_border_color,
-      'hsv_fill_color_codes': color_codes,
-      'hsv_fill_color': hsv_fill_color
+      'hsv_border_color': hsv_border_color,
+      # 'hsv_color_codes': hsv_color_codes
     })
 
-    mask = cv2.inRange(hsv, fill_color, border_color)
+    mask = cv2.inRange(hsv, hsv_fill_color_float, hsv_border_color)
     final = cv2.bitwise_and(image, image, mask = mask)
 
     # self.data['path']['result']
@@ -266,15 +210,7 @@ class GeoBuildingDetector():
       r['geojson'] = json.loads(geo_feature_collection_dump)
 
     if self.options['save_result']:
-      result_ftemplate = self.data['path']['result'] + img_name + '-<fnm>' + img_extension
-      if 'sharp_image' in color_preset['building']:
-        cv2.imwrite(result_ftemplate.replace('<fnm>', 'step-0-sharpen-1'), sharp_img)
-      if 'adjust_contrast' in color_preset['building']:
-        cv2.imwrite(result_ftemplate.replace('<fnm>', 'step-0-contrast-1'), image_new_contrast[0])
-        cv2.imwrite(result_ftemplate.replace('<fnm>', 'step-0-contrast-2'), image_new_contrast[1])
-        cv2.imwrite(result_ftemplate.replace('<fnm>', 'step-0-contrast-3'), image_new_contrast[2])
-        cv2.imwrite(result_ftemplate.replace('<fnm>', 'step-0-contrast-4'), image_new_contrast[3])
-        cv2.imwrite(result_ftemplate.replace('<fnm>', 'step-0-contrast-5'), image_new_contrast[4])
+      result_ftemplate = self.data['path']['result'] + img_name + '-<fnm>' + img_extension;
       cv2.imwrite(result_ftemplate.replace('<fnm>', 'step-1-hsv-light-color'), hsv_fill_color)
       cv2.imwrite(result_ftemplate.replace('<fnm>', 'step-2-image-bgr'), image)
       cv2.imwrite(result_ftemplate.replace('<fnm>', 'step-3-image-rgb'), img_rgb)

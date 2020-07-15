@@ -1,4 +1,5 @@
 import time
+from app import logger
 from app.utils import *
 from app.geotiff import GeoTiffProcessor
 from app.geo_building_detector import GeoBuildingDetector
@@ -50,7 +51,8 @@ class InteractiveMenu():
         print ("Thank you for tried this menu. Bye...")
         exit()
     except Exception as e:
-      pretty_print("unknown mode (an error occured)", {'error': read_exception_data(e)})
+      logger.error('Execution failed', { 'exception' : read_exception_data(e)})
+      pretty_print("Execution failed (an error occured)", {'error': read_exception_data(e)})
       # print ("unknown mode (an error occured)", {'error': read_exception_data(e)})
       write_separator()
       self.show_menu()
@@ -107,7 +109,31 @@ class InteractiveMenu():
   @classmethod
   def get_building_geojson_from_street_map(self):
     gbd= GeoBuildingDetector({
-      'show_result': False
+      'show_result': False,
+      'color_preset': 'osm'
     })
     r= gbd.get_geojson(('data/edge-detection/sample-07.png','data/edge-detection/sample-07.tif', {}))
     pretty_print('Result: ', r)
+    del gbd
+
+  @classmethod
+  def get_building_geojson_from_street_map_carto(self):
+    gbd= GeoBuildingDetector({
+      'show_result': False,
+      'color_preset': 'carto'
+    })
+    r= gbd.get_geojson(('data/edge-detection/sample-08.png','data/edge-detection/sample-08.tif', {}))
+    pretty_print('Result: ', r)
+    del gbd
+
+  @classmethod
+  def get_building_geojson_from_street_map_carto_gs(self):
+    gbd= GeoBuildingDetector({
+      'show_result': False,
+      'color_preset': 'carto_gs'
+    })
+    r= gbd.get_geojson(('data/edge-detection/sample-09.png','data/edge-detection/sample-09.tif', {}))
+    pretty_print('Result: ', r)
+    del gbd
+
+

@@ -6,6 +6,7 @@ References: https://stackoverflow.com/a/56762262/12836447
 import cv2
 import numpy as np
 import os, argparse
+from copy import copy
 
 # Argument Parsing
 ap = argparse.ArgumentParser()
@@ -24,6 +25,7 @@ img_path= args['image'] if args['image'] is not None else 'data/edge-detection/s
 img_extension = os.path.splitext(img_path)[1]
 
 img = cv2.imread(os.path.join(BASE_DIR, img_path))
+img_original= copy(img)
 
 # draw gray box around image to detect edge buildings
 h, w = img.shape[: 2]
@@ -66,7 +68,13 @@ for cnt in contours:
 
 # display result
 if show_result:
+  cv2.imshow("Result - Original", img_original)
   cv2.imshow("Result - HSV", hsv)
+  cv2.imshow("Result - Yellow Mask", yellow_mask)
+  cv2.imshow("Result - Gray Mask", gray_mask)
+  
+  cv2.imshow("Result - Gray", gray)
+  cv2.imshow("Result - Blurred", blurred)
   cv2.imshow("Result - Tresh", thresh)
   cv2.imshow("Result - Final", img)
 
