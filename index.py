@@ -16,6 +16,7 @@ if __name__ == "__main__":
     'translate_polygon_axis_points_to_coordinates': 'Translate Polygon Axis Points to Coordinates (Medium Image)',
     'translate_multi_poliygon_axis_points_to_coordinates': 'Translate Multi Polygon Axis Points to Coordinates (Medium Image)',
     'get_building_geojson_from_street_map': 'Get Building GeoJSON From Street Map - OSM',
+    'get_building_geojson_from_street_map_google': 'Get Building GeoJSON From Street Map - Google',
     'get_building_geojson_from_street_map_carto': 'Get Building GeoJSON From Street Map - Carto',
     'get_building_geojson_from_street_map_carto_gs': 'Get Building GeoJSON From Street Map - Grayscale',
     'exit':'Exit menu'

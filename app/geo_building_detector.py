@@ -70,7 +70,27 @@ class GeoBuildingDetector():
           # 'masking_color_mode': cv2.COLOR_BGR2HSV
         }
       },
-      'google': {}
+      'google': {
+        'building': {
+          'fill': (244, 243, 241),
+          'border': {
+            'type': 'exact',
+            'value': (239, 235, 235)
+          },
+          'contour': (36, 255, 12),
+          # 'masking_color_mode': cv2.COLOR_BGR2HSV,
+          'adjust_contrast': {
+            'alpha': 1.0,
+            'beta': -80
+          },
+          'sharp_image': {
+            'kernel_size': (5, 5), 
+            'sigma': 0, 
+            'amount': 1.0, 
+            'threshold': 0
+          }
+        }
+      }
     },
     'path': {
       'data': os.path.join(BASE_DIR, config['path']['data_edge_detection']),

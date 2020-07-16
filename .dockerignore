@@ -15,6 +15,12 @@ data/edge-detection/*
 !data/edge-detection/sample-06.png
 !data/edge-detection/sample-07.png
 !data/edge-detection/sample-07.tif
+!data/edge-detection/sample-08.png
+!data/edge-detection/sample-08.tif
+!data/edge-detection/sample-09.png
+!data/edge-detection/sample-09.tif
+!data/edge-detection/sample-10.png
+!data/edge-detection/sample-10.tif
 !data/edge-detection/shapes_and_colors.jpg
 data/map-download/output/*
 data/map-download/temp/*
