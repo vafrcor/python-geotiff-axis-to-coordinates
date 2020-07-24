@@ -1,4 +1,4 @@
-import enum, os
+import enum, os, cv2, numpy as np
 
 def write_separator(total=32):
   print (''.join('-' * total))
@@ -64,3 +64,13 @@ def bgr_color_to_hex(color: tuple):
 
 def bgr_color_to_rgb_hex(color: tuple):
   return '#%02x%02x%02x' % (color[2], color[1], color[0])
+
+def bgr_color_to_hsv(color: tuple):
+  hsv=cv2.cvtColor(np.uint8([[color]]), cv2.COLOR_BGR2HSV)
+  r= hsv[0][0]
+  return (float(r[0]), float(r[1]), float(r[2]))
+
+def hsv_color_to_bgr(color: tuple):
+  bgr=cv2.cvtColor(np.uint8([[color]]), cv2.COLOR_HSV2BGR)
+  r= bgr[0][0]
+  return (float(r[0]), float(r[1]), float(r[2]))
