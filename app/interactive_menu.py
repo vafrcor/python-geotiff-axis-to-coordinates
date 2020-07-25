@@ -122,9 +122,10 @@ class InteractiveMenu():
       'show_result': False,
       'color_preset': 'google'
     })
-    r= gbd.get_geojson(('data/edge-detection/sample-10.png','data/edge-detection/sample-10.tif', {}))
+    r= gbd.get_geojson(('data/edge-detection/sample-11.png','data/edge-detection/sample-11.tif', {}))
     pretty_print('Result: ', r)
     del gbd
+    
   @classmethod
   def get_building_geojson_from_street_map_carto(self):
     gbd= GeoBuildingDetector({
