@@ -18,7 +18,7 @@ if __name__ == "__main__":
     'get_building_geojson_from_street_map': 'Get Building GeoJSON From Street Map - OSM',
     'get_building_geojson_from_street_map_google': 'Get Building GeoJSON From Street Map - Google',
     'get_building_geojson_from_street_map_carto': 'Get Building GeoJSON From Street Map - Carto',
-    'get_building_geojson_from_street_map_carto_gs': 'Get Building GeoJSON From Street Map - Grayscale',
+    'get_building_geojson_from_street_map_carto_gs': 'Get Building GeoJSON From Street Map - Carto Grayscale',
     'exit':'Exit menu'
   })
   InteractiveMenu.show_menu()

@@ -17,57 +17,44 @@ class GeoBuildingDetector():
     'color_preset': 'osm'
   }
   data = {
-    #Color Preset using BGR Format 
+    # Color Preset using BGR Format 
     'color_presets': {
       'osm': {
         'building': {
           'fill': (202, 208, 216),
           'border': {
             'type': 'relative',
-            # 'value': (30, 30, 30)
             'value': ('+30', '+30', '+30')
           },
-          'contour': (36, 255, 12),
-          # 'masking_color_mode': cv2.COLOR_BGR2HSV
+          'contour': (36, 255, 12)
         }
       },
       'carto': {
         'building': {
-          # 'fill': (227, 239, 246),
-          # 'fill': (168, 179, 186),
-          'fill': (128, 139, 146),
+          'fill': {
+            'yellow': (228,239,246)
+          },
           'border': {
-            'type': 'exact',
-            # 'value': (157, 172, 182),
-            # 'value': (148, 160, 168),
-            'value': (100, 119, 132),
-            # 'value': (205, 220, 230),
-            # 'value': ('+30', '+30', '+30')
+            'type': 'relative',
+            'value': {
+              'yellow': ('+10', '+10', '+10')
+            }
           },
-          'contour': (36, 255, 12),
-          # 'masking_color_mode': cv2.COLOR_BGR2HSV,
-          'adjust_contrast': {
-            'alpha': 1.0,
-            'beta': -80
-          },
-          'sharp_image': {
-            'kernel_size': (5, 5), 
-            'sigma': 0, 
-            'amount': 1.0, 
-            'threshold': 0
-          }
-          # 'masking_color_mode': cv2.COLOR_BGR2LUV
+          'contour': (36, 255, 12)
         }
       },
       'carto_gs': {
         'building': {
-          'fill': (237, 237, 237),
-          'border': {
-            'type': 'exact',
-            'value': (222, 222, 222)
+          'fill': {
+            'gray': (237,237,237)
           },
-          'contour': (36, 255, 12),
-          # 'masking_color_mode': cv2.COLOR_BGR2HSV
+          'border': {
+            'type': 'relative',
+            'value': {
+              'gray': ('+10', '+10', '+10')
+            }
+          },
+          'contour': (36, 255, 12)
         }
       },
       'google': {
@@ -84,6 +71,22 @@ class GeoBuildingDetector():
             }
           },
           'contour': (36, 255, 12)
+        }
+      },
+      'unknown': {
+        'building': {
+          # 'adjust_contrast': {
+          #   'alpha': 1.0,
+          #   'beta': -80
+          # },
+          # 'sharp_image': {
+          #   'kernel_size': (5, 5), 
+          #   'sigma': 0, 
+          #   'amount': 1.0, 
+          #   'threshold': 0
+          # }
+          # 'masking_color_mode': cv2.COLOR_BGR2LUV
+          # 'masking_color_mode': cv2.COLOR_BGR2HSV,
         }
       }
     },
@@ -386,7 +389,6 @@ class GeoBuildingDetector():
       fc_hsv_building_yellow_darker= self.transform_relative_color(fc_hsv_building_yellow, color_preset['building']['border']['value']['yellow'])
       fc_hsv_building_gray_darker= self.transform_relative_color(fc_hsv_building_gray, color_preset['building']['border']['value']['gray'])
     else :
-      find_border_color = cv2.cvtColor(np.uint8([[color_preset['building']['border']['value']]]), cv2.COLOR_BGR2HSV)
       fc_hsv_building_yellow_darker= self.transform_color_string_to_float(color_preset['building']['border']['value']['yellow'])
       fc_hsv_building_gray_darker= self.transform_color_string_to_float(color_preset['building']['border']['value']['gray'])
 
@@ -463,7 +465,7 @@ class GeoBuildingDetector():
     # [Step-5] Draw contours to original image clone
     final_wctrs= copy(image)
     for c in contours:
-      cv2.drawContours(final_wctrs, [c], 0, (36, 255, 12), 2)
+      cv2.drawContours(final_wctrs, [c], 0, color_preset['building']['contour'], 2)
 
     # Build result
     polygon_len = len(ctr_points)
@@ -476,7 +478,7 @@ class GeoBuildingDetector():
       r['geojson'] = json.loads(geo_feature_collection_dump)
 
     if self.options['save_result']:
-      result_ftemplate = self.data['path']['result'] + img_name + '-gmap-<fnm>' + img_extension
+      result_ftemplate = self.data['path']['result'] + img_name + '-google-<fnm>' + img_extension
 
       self.write_image_results(result_ftemplate, '<fnm>', [
         ('step-1-1-hsv-building-yellow', fc_hsv_building_yellow),
@@ -500,6 +502,8 @@ class GeoBuildingDetector():
         ("Step - 2 (Image - BGR)", image),
         ("Step - 3 ( Image - RGB)", img_rgb),
         ("Step - 4-0 (HSV)", hsv),
+        ("Step - 4-1 (HSV - Yellow)", mask_yellow),
+        ("Step - 4-1 (HSV - Gray)", mask_gray),
         ("Step - 5 (Final)", final),
         ("Step - 6 (Final - Gray)", final_gray),
         ("Step - 7 (Final - Gray Blurred)", final_blurred),
@@ -516,17 +520,282 @@ class GeoBuildingDetector():
       return r
 
   def get_geojson_carto(self, filepath: tuple = (), opts: dict = {}) -> dict:
+    # [Step - 1] Get image + check color sampling
+    img_path = os.path.join(BASE_DIR, filepath[0])
+    img_tiff_path = os.path.join(BASE_DIR, filepath[1])
+    img_extension = os.path.splitext(img_path)[1]
+    img_name = ntpath.basename(img_path).replace(img_extension, '')
+    img_base_path = img_path.replace(ntpath.basename(img_path), '')
+
+    color_preset = self.data['color_presets'][self.options['color_preset']]
+    logger.info('Color Preset (Carto): ', {'color_preset': color_preset})
+
+    image = cv2.imread(img_path, 1)
+      
+    fc_bgr_building_yellow= color_preset['building']['fill']['yellow']
+
+    fc_hsv_building_yellow = bgr_color_to_hsv(fc_bgr_building_yellow)
+
+    if color_preset['building']['border']['type'] == 'relative':
+      fc_hsv_building_yellow_darker= self.transform_relative_color(fc_hsv_building_yellow, color_preset['building']['border']['value']['yellow'])
+    else :
+      fc_hsv_building_yellow_darker= self.transform_color_string_to_float(color_preset['building']['border']['value']['yellow'])
+      
+    logger.debug(self.logger_base_text + 'Color Info', {
+      'fill_color_bgr': {
+        'yellow': fc_bgr_building_yellow
+      },
+      'fill_color_hsv': {
+        'yellow': fc_hsv_building_yellow
+      },
+      'border_color_hsv': {
+        'yellow': fc_hsv_building_yellow_darker
+      }
+    })
+
+    # [Step-2] Do masking on HSV Image 
+    img_rgb= cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    hsv= cv2.cvtColor(img_rgb, cv2.COLOR_RGB2HSV)
+
+    mask_yellow = cv2.inRange(hsv, fc_hsv_building_yellow, fc_hsv_building_yellow_darker)
+    final= cv2.bitwise_or(image, image, mask=mask_yellow)
+
+    # [Step-3] Find Contours
+    json_contour_filepath = self.data['file']['json_contour'].replace('<result_path>', self.data['path']['result']).replace('<img_name>', img_name).replace('<preset>','carto')
+    json_contour_debug_filepath = self.data['file']['json_contour_debug'].replace('<result_path>', self.data['path']['result']).replace('<img_name>', img_name).replace('<preset>','carto')
+    geojson_filepath = self.data['file']['geojson'].replace('<result_path>', self.data['path']['result']).replace('<img_name>', img_name).replace('<preset>','carto')
+
+    final_gray = cv2.cvtColor(final, cv2.COLOR_BGR2GRAY)
+    final_blurred = cv2.GaussianBlur(final_gray, (5, 5), 0)
+    ret, final_thresh = cv2.threshold(final_blurred, 127, 255, 0)
+
+    contours, hierarchy = cv2.findContours(final_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    ctr_json_str= json.dumps({'contours': contours, 'hierarchy': hierarchy}, default=json_np_default_parser)
+    ctr_json= json.loads(ctr_json_str)
+
+    ctr_points=[]
+    for cidx in range(len(ctr_json['contours'])):
+      ctr_points.append(list(map(lambda x: x[0], ctr_json['contours'][cidx])))
+
+    # [Step - 4] Find Contours Geographic Coordinates
+    geotiff_image= img_path.replace(img_extension, '.tif')
+    translate_coords= GeoTiffProcessor.get_multi_polygon_axis_point_coordinates(geotiff_image, ctr_points, {'debug': False})
+
+    final_coords=[]
+    geo_features=[]
+    for poly in translate_coords['coords']:
+      poly_coords=[]
+      poly_geo_coords=[]
+      for cr in poly:
+        poly_coords.append({'x': cr['x'], 'y': cr['y'], 'latitude': cr['lat'], 'longitude': cr['long']})
+        poly_geo_coords.append((cr['long'], cr['lat']))
+
+      # add final closing point
+      poly_geo_coords.append((poly[0]['long'], poly[0]['lat']))
+      final_coords.append(poly_coords)
+      geo_feature= Feature(geometry=Polygon([poly_geo_coords], precision=15))
+      geo_features.append(geo_feature)
+      
+
+    geo_feature_collection = FeatureCollection(geo_features)
+    geo_feature_collection_dump = geojson_dumps(geo_feature_collection, sort_keys=True)
+
+    with open(json_contour_filepath, 'w') as outfile:
+      json.dump(final_coords, outfile)
+
+    with open(geojson_filepath, 'w') as outfile:
+      outfile.write(geo_feature_collection_dump)
+
+    # [Step-5] Draw contours to original image clone
+    final_wctrs= copy(image)
+    for c in contours:
+      cv2.drawContours(final_wctrs, [c], 0, color_preset['building']['contour'], 2)
+
+    # Build result
+    polygon_len = len(ctr_points)
     r = {
-      'file_path': None,
-      'file_size': '0 KB',
-      'polygon_total': 0
+      'file_path': geojson_filepath,
+      'file_size': str(get_file_size(geojson_filepath, SIZE_UNIT.KB))+' KB',
+      'polygon_total': polygon_len
     }
-    return r
+    if 'return_polygon_data' in opts and bool(opts['return_polygon_data']):
+      r['geojson'] = json.loads(geo_feature_collection_dump)
+
+    if self.options['save_result']:
+      result_ftemplate = self.data['path']['result'] + img_name + '-carto-<fnm>' + img_extension
+
+      self.write_image_results(result_ftemplate, '<fnm>', [
+        ('step-1-1-hsv-building-yellow', fc_hsv_building_yellow),
+        ('step-2-image-bgr', image),
+        ('step-3-image-rgb', img_rgb),
+        ('step-4-0-hsv', hsv),
+        ('step-4-1-hsv-mask-yellow', mask_yellow),
+        ('step-5-final', final),
+        ('step-6-image-gray', final_gray),
+        ('step-7-final-blurred', final_blurred),
+        ('step-8-final-thresh', final_thresh),
+        ('step-9-image-final-with-contours', final_wctrs)
+      ])
+
+    if self.options['show_result']:
+      show_image_results([
+        ("Step - 1-1 (HSV Yellow Color)", np.uint8([[fc_hsv_building_yellow]])),
+        ("Step - 2 (Image - BGR)", image),
+        ("Step - 3 ( Image - RGB)", img_rgb),
+        ("Step - 4-0 (HSV)", hsv),
+        ("Step - 4-1 (HSV - Yellow)", mask_yellow),
+        ("Step - 5 (Final)", final),
+        ("Step - 6 (Final - Gray)", final_gray),
+        ("Step - 7 (Final - Gray Blurred)", final_blurred),
+        ("Step - 8 (Final - Gray Thresh)", final_thresh),
+        ("Step - 9 (Final - with contours)", final_wctrs)
+      ])
+
+      # [Step - ending] Clean - up
+      del contours, hierarchy, image, fc_hsv_building_yellow, img_rgb, hsv, final, final_gray, final_wctrs, final_blurred, final_thresh, mask_yellow
+      return r
+    else:
+      # [Step - ending] Clean - up
+      del contours, hierarchy, image, fc_hsv_building_yellow, img_rgb, hsv, final, final_gray, final_wctrs, final_blurred, final_thresh, mask_yellow
+      return r
 
   def get_geojson_carto_gs(self, filepath: tuple = (), opts: dict = {}) -> dict:
+    # [Step - 1] Get image + check color sampling
+    img_path = os.path.join(BASE_DIR, filepath[0])
+    img_tiff_path = os.path.join(BASE_DIR, filepath[1])
+    img_extension = os.path.splitext(img_path)[1]
+    img_name = ntpath.basename(img_path).replace(img_extension, '')
+    img_base_path = img_path.replace(ntpath.basename(img_path), '')
+
+    color_preset = self.data['color_presets'][self.options['color_preset']]
+    logger.info('Color Preset (Carto Grayscale): ', {'color_preset': color_preset})
+
+    image = cv2.imread(img_path, 1)
+      
+    fc_bgr_building_gray= color_preset['building']['fill']['gray']
+    fc_hsv_building_gray = bgr_color_to_hsv(fc_bgr_building_gray)
+
+    if color_preset['building']['border']['type'] == 'relative':
+      fc_hsv_building_gray_darker= self.transform_relative_color(fc_hsv_building_gray, color_preset['building']['border']['value']['gray'])
+    else :
+      fc_hsv_building_gray_darker= self.transform_color_string_to_float(color_preset['building']['border']['value']['gray'])
+
+    logger.debug(self.logger_base_text + 'Color Info', {
+      'fill_color_bgr': {
+        'gray': fc_bgr_building_gray
+      },
+      'fill_color_hsv': {
+        'gray': fc_hsv_building_gray
+      },
+      'border_color_hsv': {
+        'gray': fc_hsv_building_gray_darker
+      }
+    })
+
+    # [Step-2] Do masking on HSV Image 
+    img_rgb= cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    hsv= cv2.cvtColor(img_rgb, cv2.COLOR_RGB2HSV)
+
+    mask_gray = cv2.inRange(hsv, fc_hsv_building_gray, fc_hsv_building_gray_darker)
+    final= cv2.bitwise_or(image, image, mask=mask_gray)
+
+    # [Step-3] Find Contours
+    json_contour_filepath = self.data['file']['json_contour'].replace('<result_path>', self.data['path']['result']).replace('<img_name>', img_name).replace('<preset>','carto-gs')
+    json_contour_debug_filepath = self.data['file']['json_contour_debug'].replace('<result_path>', self.data['path']['result']).replace('<img_name>', img_name).replace('<preset>','carto-gs')
+    geojson_filepath = self.data['file']['geojson'].replace('<result_path>', self.data['path']['result']).replace('<img_name>', img_name).replace('<preset>','carto-gs')
+
+    final_gray = cv2.cvtColor(final, cv2.COLOR_BGR2GRAY)
+    final_blurred = cv2.GaussianBlur(final_gray, (3, 3), 0)
+    ret, final_thresh = cv2.threshold(final_blurred, 127, 255, 0)
+
+    contours, hierarchy = cv2.findContours(final_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    ctr_json_str= json.dumps({'contours': contours, 'hierarchy': hierarchy}, default=json_np_default_parser)
+    ctr_json= json.loads(ctr_json_str)
+
+    ctr_points=[]
+    for cidx in range(len(ctr_json['contours'])):
+      ctr_points.append(list(map(lambda x: x[0], ctr_json['contours'][cidx])))
+
+    # [Step - 4] Find Contours Geographic Coordinates
+    geotiff_image= img_path.replace(img_extension, '.tif')
+    translate_coords= GeoTiffProcessor.get_multi_polygon_axis_point_coordinates(geotiff_image, ctr_points, {'debug': False})
+
+    final_coords=[]
+    geo_features=[]
+    for poly in translate_coords['coords']:
+      poly_coords=[]
+      poly_geo_coords=[]
+      for cr in poly:
+        poly_coords.append({'x': cr['x'], 'y': cr['y'], 'latitude': cr['lat'], 'longitude': cr['long']})
+        poly_geo_coords.append((cr['long'], cr['lat']))
+
+      # add final closing point
+      poly_geo_coords.append((poly[0]['long'], poly[0]['lat']))
+      final_coords.append(poly_coords)
+      geo_feature= Feature(geometry=Polygon([poly_geo_coords], precision=15))
+      geo_features.append(geo_feature)
+      
+
+    geo_feature_collection = FeatureCollection(geo_features)
+    geo_feature_collection_dump = geojson_dumps(geo_feature_collection, sort_keys=True)
+
+    with open(json_contour_filepath, 'w') as outfile:
+      json.dump(final_coords, outfile)
+
+    with open(geojson_filepath, 'w') as outfile:
+      outfile.write(geo_feature_collection_dump)
+
+    # [Step-5] Draw contours to original image clone
+    final_wctrs= copy(image)
+    for c in contours:
+      cv2.drawContours(final_wctrs, [c], 0, color_preset['building']['contour'], 2)
+
+    # Build result
+    polygon_len = len(ctr_points)
     r = {
-      'file_path': None,
-      'file_size': '0 KB',
-      'polygon_total': 0
+      'file_path': geojson_filepath,
+      'file_size': str(get_file_size(geojson_filepath, SIZE_UNIT.KB))+' KB',
+      'polygon_total': polygon_len
     }
-    return r
+    if 'return_polygon_data' in opts and bool(opts['return_polygon_data']):
+      r['geojson'] = json.loads(geo_feature_collection_dump)
+
+    if self.options['save_result']:
+      result_ftemplate = self.data['path']['result'] + img_name + '-carto-gs-<fnm>' + img_extension
+
+      self.write_image_results(result_ftemplate, '<fnm>', [
+        ('step-1-2-hsv-building-gray', fc_hsv_building_gray),
+        ('step-2-image-bgr', image),
+        ('step-3-image-rgb', img_rgb),
+        ('step-4-0-hsv', hsv),
+        ('step-4-1-hsv-mask-gray', mask_gray),
+        ('step-5-final', final),
+        ('step-6-image-gray', final_gray),
+        ('step-7-final-blurred', final_blurred),
+        ('step-8-final-thresh', final_thresh),
+        ('step-9-image-final-with-contours', final_wctrs)
+      ])
+
+    if self.options['show_result']:
+      show_image_results([
+        ("Step - 1-1 (HSV Gray Color)", np.uint8([[fc_hsv_building_gray]])),
+        ("Step - 2 (Image - BGR)", image),
+        ("Step - 3 ( Image - RGB)", img_rgb),
+        ("Step - 4-0 (HSV)", hsv),
+        ("Step - 4-1 (HSV - Gray)", mask_gray),
+        ("Step - 5 (Final)", final),
+        ("Step - 6 (Final - Gray)", final_gray),
+        ("Step - 7 (Final - Gray Blurred)", final_blurred),
+        ("Step - 8 (Final - Gray Thresh)", final_thresh),
+        ("Step - 9 (Final - with contours)", final_wctrs)
+      ])
+
+      # [Step - ending] Clean - up
+      del contours, hierarchy, image, img_rgb, hsv, final, final_gray, final_wctrs, final_blurred, final_thresh, mask_gray, fc_hsv_building_gray
+      return r
+    else:
+      # [Step - ending] Clean - up
+      del contours, hierarchy, image, img_rgb, hsv, final, final_gray, final_wctrs, final_blurred, final_thresh, mask_gray, fc_hsv_building_gray
+      return r
