@@ -6,8 +6,9 @@ from copy import copy
 # import imutils
 from geojson import Feature, Point, FeatureCollection, GeometryCollection, LineString, Polygon, dumps as geojson_dumps
 from app.geotiff import GeoTiffProcessor
-from app.utils import bgr_color_to_hex, bgr_color_to_rgb_hex, json_np_default_parser, get_file_size, SIZE_UNIT, bgr_color_to_hsv, bgr_color_to_rgb_hex
+from app.utils import bgr_color_to_hex, bgr_color_to_rgb_hex, json_np_default_parser, get_file_size, SIZE_UNIT, bgr_color_to_hsv, bgr_color_to_rgb_hex, pretty_print
 from app import config, logger, BASE_DIR
+from scipy.interpolate import splprep, splev
 
 class GeoBuildingDetector():
   logger_base_text = 'GeoBuildingDetector \\ '
@@ -26,7 +27,11 @@ class GeoBuildingDetector():
             'type': 'relative',
             'value': ('+30', '+30', '+30')
           },
-          'contour': (36, 255, 12)
+          'contour': (36, 255, 12),
+          'normalize_contours': True,
+          'normalization_options': {
+            'arclen_percentage': 0.01
+          }
         }
       },
       'carto': {
@@ -40,7 +45,11 @@ class GeoBuildingDetector():
               'yellow': ('+10', '+10', '+10')
             }
           },
-          'contour': (36, 255, 12)
+          'contour': (36, 255, 12),
+          'normalize_contours': True,
+          'normalization_options': {
+            'arclen_percentage': 0.005
+          }
         }
       },
       'carto_gs': {
@@ -54,7 +63,11 @@ class GeoBuildingDetector():
               'gray': ('+10', '+10', '+10')
             }
           },
-          'contour': (36, 255, 12)
+          'contour': (36, 255, 12),
+          'normalize_contours': True,
+          'normalization_options': {
+            'arclen_percentage': 0.005
+          }
         }
       },
       'google': {
@@ -70,11 +83,16 @@ class GeoBuildingDetector():
               'gray': ('+30', '+30', '+30')
             }
           },
-          'contour': (36, 255, 12)
+          'contour': (36, 255, 12),
+          'normalize_contours': True,
+          'normalization_options': {
+            'arclen_percentage': 0.005
+          }
         }
       },
       'unknown': {
         'building': {
+          'normalize_contours': False
           # 'adjust_contrast': {
           #   'alpha': 1.0,
           #   'beta': -80
@@ -151,6 +169,50 @@ class GeoBuildingDetector():
       float(color[2])
     )
 
+  def normalize_contours(self, contours=(), opts: dict={}):
+    # ref: 
+    # - https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_contours/py_contour_features/py_contour_features.html#contour-approximation
+    # - http://en.wikipedia.org/wiki/Ramer-Douglas-Peucker_algorithm
+    color_preset = self.data['color_presets'][self.options['color_preset']]
+    norm_config= {
+      'arclen_percentage': 0.01
+    }
+    if 'normalization_options' in color_preset['building']:
+      norm_config.update(color_preset['building']['normalization_options'])
+
+    # .arclen_percentage
+    new_contours=[]
+    for idx in range(len(contours)):
+      # get the max-area contour
+      cnt = contours[idx]
+      # cnt_sorted = sorted(cnt, key=cv2.contourArea)[-1]
+      # arclen = cv2.arcLength(cnt_sorted, True)
+      arclen = cv2.arcLength(cnt, True)
+
+      # do approx
+      eps= norm_config['arclen_percentage']
+      epsilon = arclen * eps
+      approx = cv2.approxPolyDP(cnt, epsilon, True)
+      debug={
+        'cnt': cnt,
+        'cnt_after': approx,
+        'arclen': arclen,
+        'compare_length': {
+          'before': len(cnt),
+          'after': len(approx)
+        },
+        'approx': approx,
+        'arclen': arclen
+      }
+      # pretty_print('contour-{} :'.format(idx), debug)
+      logger.debug('contour-{} :'.format(idx), debug)
+      # temp=[]
+      # new_contours.append(temp.append(approx))
+      # idx+=1
+      new_contours.append(approx)
+
+    return new_contours
+
   def write_image_results(self, fn_template: str, plchldr: str='<fnm>', pns: list=[]) -> None:
     for ef in pns:
       cv2.imwrite(fn_template.replace(plchldr, ef[0]), ef[1])
@@ -176,9 +238,11 @@ class GeoBuildingDetector():
     img_extension = os.path.splitext(img_path)[1]
     img_name = ntpath.basename(img_path).replace(img_extension, '')
     img_base_path = img_path.replace(ntpath.basename(img_path), '')
+    
 
     color_preset = self.data['color_presets'][self.options['color_preset']]
     logger.info('Color Preset (OSM): ', {'color_preset': color_preset})
+    do_contour_normalization= bool(color_preset['building']['normalize_contours']) if 'normalize_contours' in color_preset['building'] else False
 
     image_origin = cv2.imread(img_path, 1)
     if 'sharp_image' in color_preset['building']:
@@ -262,6 +326,11 @@ class GeoBuildingDetector():
     final_blurred = cv2.GaussianBlur(final_gray, (5, 5), 0)
     ret, final_thresh = cv2.threshold(final_blurred, 127, 255, 0)
     contours, hierarchy = cv2.findContours(final_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+
+    # contour normalization
+    if do_contour_normalization:
+      contours= self.normalize_contours(contours)
 
     ctr_json_str = json.dumps({
         'contours': contours,
@@ -377,6 +446,8 @@ class GeoBuildingDetector():
     color_preset = self.data['color_presets'][self.options['color_preset']]
     logger.info('Color Preset (GMAP): ', {'color_preset': color_preset})
 
+    do_contour_normalization= bool(color_preset['building']['normalize_contours']) if 'normalize_contours' in color_preset['building'] else False
+
     image = cv2.imread(img_path, 1)
       
     fc_bgr_building_yellow= color_preset['building']['fill']['yellow']
@@ -425,6 +496,14 @@ class GeoBuildingDetector():
     ret, final_thresh = cv2.threshold(final_blurred, 127, 255, 0)
 
     contours, hierarchy = cv2.findContours(final_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # contours, hierarchy = cv2.findContours(final_thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+    # contours, hierarchy = cv2.findContours(final_thresh, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+
+    # contour normalization
+    if do_contour_normalization:
+      contours= self.normalize_contours(contours)
 
     ctr_json_str= json.dumps({'contours': contours, 'hierarchy': hierarchy}, default=json_np_default_parser)
     ctr_json= json.loads(ctr_json_str)
@@ -529,9 +608,10 @@ class GeoBuildingDetector():
 
     color_preset = self.data['color_presets'][self.options['color_preset']]
     logger.info('Color Preset (Carto): ', {'color_preset': color_preset})
-
+    do_contour_normalization= bool(color_preset['building']['normalize_contours']) if 'normalize_contours' in color_preset['building'] else False
     image = cv2.imread(img_path, 1)
       
+
     fc_bgr_building_yellow= color_preset['building']['fill']['yellow']
 
     fc_hsv_building_yellow = bgr_color_to_hsv(fc_bgr_building_yellow)
@@ -570,6 +650,10 @@ class GeoBuildingDetector():
     ret, final_thresh = cv2.threshold(final_blurred, 127, 255, 0)
 
     contours, hierarchy = cv2.findContours(final_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # contour normalization
+    if do_contour_normalization:
+      contours= self.normalize_contours(contours)
 
     ctr_json_str= json.dumps({'contours': contours, 'hierarchy': hierarchy}, default=json_np_default_parser)
     ctr_json= json.loads(ctr_json_str)
@@ -670,7 +754,7 @@ class GeoBuildingDetector():
 
     color_preset = self.data['color_presets'][self.options['color_preset']]
     logger.info('Color Preset (Carto Grayscale): ', {'color_preset': color_preset})
-
+    do_contour_normalization= bool(color_preset['building']['normalize_contours']) if 'normalize_contours' in color_preset['building'] else False
     image = cv2.imread(img_path, 1)
       
     fc_bgr_building_gray= color_preset['building']['fill']['gray']
@@ -710,6 +794,10 @@ class GeoBuildingDetector():
     ret, final_thresh = cv2.threshold(final_blurred, 127, 255, 0)
 
     contours, hierarchy = cv2.findContours(final_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # contour normalization
+    if do_contour_normalization:
+      contours= self.normalize_contours(contours)
 
     ctr_json_str= json.dumps({'contours': contours, 'hierarchy': hierarchy}, default=json_np_default_parser)
     ctr_json= json.loads(ctr_json_str)
