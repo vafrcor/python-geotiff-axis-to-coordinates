@@ -8,7 +8,6 @@ from geojson import Feature, Point, FeatureCollection, GeometryCollection, LineS
 from app.geotiff import GeoTiffProcessor
 from app.utils import bgr_color_to_hex, bgr_color_to_rgb_hex, json_np_default_parser, get_file_size, SIZE_UNIT, bgr_color_to_hsv, bgr_color_to_rgb_hex, pretty_print
 from app import config, logger, BASE_DIR
-from scipy.interpolate import splprep, splev
 
 class GeoBuildingDetector():
   logger_base_text = 'GeoBuildingDetector \\ '
@@ -92,7 +91,7 @@ class GeoBuildingDetector():
       },
       'unknown': {
         'building': {
-          'normalize_contours': False
+          'normalize_contours': False,
           # 'adjust_contrast': {
           #   'alpha': 1.0,
           #   'beta': -80
